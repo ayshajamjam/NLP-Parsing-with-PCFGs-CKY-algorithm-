@@ -1,1 +1,1 @@
-# NLP-Parsing-with-PCFGs-CKY-algorithm-
+# Parsing with PCFGs (CKY algorithm)
