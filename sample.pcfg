@@ -1,8 +1,8 @@
 # Startsymbols
-TOP ; 1.0
+S ; 1.0
 
 # Phrasal rules
-TOP -> NP VP ; 1.0
+S -> NP VP ; 1.0
 VP -> V NP ; 0.6
 VP -> VP PP ; 0.4
 PP -> P NP ; 1.0

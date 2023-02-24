@@ -99,8 +99,57 @@ class CkyParser(object):
         Membership checking. Parse the input tokens and return True if 
         the sentence is in the language described by the grammar. Otherwise
         return False
+        Use CYK algorithm
         """
-        # TODO, part 2
+        # Check if grammar is in CNF
+        if(not self.grammar.verify_grammar()):
+            return False
+
+        table = defaultdict(tuple)
+        
+        # Initialize diagonal
+        # dict(tuple : list); ex: (5,6):['NP', 'N']
+        print("Initializing diagonal:\n")
+        for i in range(0, len(tokens)):
+            terminal_tup = tuple(tokens[i].split())
+            nonterminal = []
+            for lhs in self.grammar.rhs_to_rules[terminal_tup]:
+                nonterminal.append(lhs[0])
+                print(lhs[0], ' -> ', terminal_tup)
+            table[(i, i+1)] = nonterminal
+
+        # Main loop
+        print("\n")
+        n = len(tokens)
+        for length in range(2,n+1):
+            print('Level: ', length, '\n')
+            for i in range(0, (n-length)+1):
+                j = i + length
+                table[i,j] = []
+                for k in range(i+1, j):
+                    B = table[(i,k)]
+                    C = table[(k,j)]
+                    for nt_b in B:
+                        for nt_c in C:
+                            rhs = tuple([nt_b, nt_c])
+                            if(self.grammar.rhs_to_rules[rhs]):
+                                for lhs in self.grammar.rhs_to_rules[rhs]:
+                                    print('grammar contains rule: ', lhs[0], ' -> ', rhs)
+                                    # TODO: what if you get (1,6):['VP','VP'];
+                                    # Right now i'm making it so its only unique lhs values (maybe use a set instead)
+                                    if(lhs[0] not in table[(i,j)]):
+                                        table[(i,j)].append(lhs[0])
+            print("\n")
+
+        print("CYK Table:\n", dict(table), "\n")
+
+        # Check if list in upper-right corner is nonempty so you can access first element in list
+        # Otherwise you will get an index error
+        if(table[(0,n)] and self.grammar.startsymbol in table[(0,n)]):
+            print('The sentence is in the grammar')
+            return True
+
+        print('The sentence is NOT in the grammar')
         return False 
        
     def parse_with_backpointers(self, tokens):
@@ -124,10 +173,27 @@ def get_tree(chart, i,j,nt):
 if __name__ == "__main__":
     
     with open('atis3.pcfg','r') as grammar_file: 
-        grammar = Pcfg(grammar_file) 
+        grammar = Pcfg(grammar_file)
         parser = CkyParser(grammar)
-        toks =['flights', 'from','miami', 'to', 'cleveland','.'] 
-        #print(parser.is_in_language(toks))
+
+        # Test atis3.pcfg
+        # toks_valid = ['flights', 'from','miami', 'to', 'cleveland','.']
+        # parser.is_in_language(toks_valid)
+        # print(parser.is_in_language(toks_valid))
+
+        toks_invalid = ['miami', 'flights','cleveland', 'from', 'to','.']
+        parser.is_in_language(toks_invalid)
+        print(parser.is_in_language(toks_invalid))
+
+        # Test sample.pcfg
+        # toks_valid = ['she', 'saw', 'the', 'cat', 'with', 'glasses']
+        # parser.is_in_language(toks_valid)
+        # print(parser.is_in_language(toks_valid))
+
+        # toks_invalid = ['with', 'glasses', 'she', 'saw', 'the', 'cat']
+        # parser.is_in_language(toks_invalid)
+        # print(parser.is_in_language(toks_invalid))
+
         #table,probs = parser.parse_with_backpointers(toks)
         #assert check_table_format(chart)
         #assert check_probs_format(probs)
