@@ -2,6 +2,10 @@
 COMS W4705 - Natural Language Processing - Spring 2023
 Homework 2 - Parsing with Probabilistic Context Free Grammars 
 Daniel Bauer
+
+About this file:
+contains your parser and initially only contained scaffolding
+code
 """
 import math
 import sys

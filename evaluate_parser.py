@@ -1,3 +1,9 @@
+"""
+About this file:
+Contains a script that evaluates your parser against a test
+set
+"""
+
 from cky import Pcfg, CkyParser, get_tree
 import sys
 

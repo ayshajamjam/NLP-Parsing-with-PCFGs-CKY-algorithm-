@@ -1,1 +1,1 @@
-# Parsing with PCFGs (CKY algorithm)
+# Parsing with Probabilistic Context Free Grammars (CKY algorithm)
