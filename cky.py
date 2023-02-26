@@ -172,7 +172,7 @@ class CkyParser(object):
             nonterminal_ptr = {}
             nonterminal_prob = {}
             for lhs in self.grammar.rhs_to_rules[terminal_tup]:
-                nonterminal_ptr[lhs[0]] = (tokens[i], i, i+1)  # add to backptr table
+                nonterminal_ptr[lhs[0]] = tokens[i]  # terminals are just strings (no backpointers)
                 nonterminal_prob[lhs[0]] = math.log10(lhs[2]) # add to probs table
                 print(lhs[0], ' -> ', terminal_tup)
             table[(i, i+1)] = nonterminal_ptr
@@ -186,7 +186,7 @@ class CkyParser(object):
             for i in range(0, (n-length)+1):
                 j = i + length
                 table[i,j] = {}
-                # probs[i,j] = {}
+                probs[i,j] = {}
                 for k in range(i+1, j):
                     B = table[(i,k)]
                     C = table[(k,j)]
@@ -199,16 +199,40 @@ class CkyParser(object):
                             if(self.grammar.rhs_to_rules[rhs]):
                                 for lhs in self.grammar.rhs_to_rules[rhs]:
                                     print('grammar contains rule: ', lhs[0], ' -> ', rhs)
-                                    table[(i,j)][lhs[0]] = ((nt_b, i, k),(nt_c, k, j))
-                                    # Handle duplicates like (1,6):['VP','VP'];
-                                    # if(lhs[0] in table[(i,j)].keys()):
-                                        # table[(i,j)][lhs[0]] = max(append(lhs[0])
+                                    
+                                    print("RULE: ", lhs)
+                                    prob_rule = lhs[2]  # Ex: NP -> D N
+
+                                    print("Back Pointers for rule: ", ((nt_b, i, k),(nt_c, k, j)))
+                                    prob_left = probs[(i,k)][nt_b]  # Ex: Prob(D)
+                                    print("LEFT: ", (i,k), ' ', prob_left)
+
+                                    prob_right = probs[(k,j)][nt_c]
+                                    print("RIGHT: ", (k,j), ' ', prob_right) # Ex: Prob(N)
+
+                                    log_prob = math.log10(prob_rule) + prob_left + prob_right
+                                    print("Overall probability of this rule: ", log_prob, '\n')
+
+                                    # Deals with case where two of the same non-terminals appear in the same cell
+                                    # Ex: (1,6): two VP options
+                                    if(lhs[0] in table[(i,j)].keys()):
+                                        # Check which log_prob is higher
+                                        if(abs(log_prob) > abs(probs[(i,j)][lhs[0]])):
+                                            table[(i,j)][lhs[0]] = ((nt_b, i, k),(nt_c, k, j))
+                                            probs[(i,j)][lhs[0]] = log_prob
+                                    else:
+                                        table[(i,j)][lhs[0]] = ((nt_b, i, k),(nt_c, k, j))
+                                        probs[(i,j)][lhs[0]] = log_prob
+
+
             print("\n")
 
         print("Table: ", dict(table), '\n')
         print("Probs: ", dict(probs))
 
-        print(probs[(5,6)]['N'])
+        # print(probs[(5,6)]['N'])
+        # print(table[2,4]['NP'][0][0])
+        # print(table[2,4]['NP'][1][0])
 
         return table, probs
 
@@ -245,9 +269,7 @@ if __name__ == "__main__":
         # parser.is_in_language(toks_invalid)
         # print(parser.is_in_language(toks_invalid))
 
-        parser.parse_with_backpointers(toks_valid)
-
-        #table,probs = parser.parse_with_backpointers(toks)
-        #assert check_table_format(chart)
-        #assert check_probs_format(probs)
+        table, probs = parser.parse_with_backpointers(toks_valid)
+        assert check_table_format(table)
+        assert check_probs_format(probs)
         
