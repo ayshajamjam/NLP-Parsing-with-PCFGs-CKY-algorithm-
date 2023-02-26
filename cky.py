@@ -129,14 +129,15 @@ class CkyParser(object):
                 for k in range(i+1, j):
                     B = table[(i,k)]
                     C = table[(k,j)]
+                    # Each cell in B and C can have multiple non-terminals
                     for nt_b in B:
                         for nt_c in C:
                             rhs = tuple([nt_b, nt_c])
+                            # Check if the rule is in the grammar
                             if(self.grammar.rhs_to_rules[rhs]):
                                 for lhs in self.grammar.rhs_to_rules[rhs]:
                                     print('grammar contains rule: ', lhs[0], ' -> ', rhs)
-                                    # TODO: what if you get (1,6):['VP','VP'];
-                                    # Right now i'm making it so its only unique lhs values (maybe use a set instead)
+                                    # Handle duplicates like (1,6):['VP','VP'];
                                     if(lhs[0] not in table[(i,j)]):
                                         table[(i,j)].append(lhs[0])
             print("\n")
@@ -156,9 +157,59 @@ class CkyParser(object):
         """
         Parse the input tokens and return a parse table and a probability table.
         """
-        # TODO, part 3
-        table= None
-        probs = None
+        table = defaultdict(tuple)  #table containing backpointers
+        probs = defaultdict(tuple)  #table containing probabilities
+
+        # check if the sentence is in the grammar
+        if (self.is_in_language(tokens) == False):
+            return
+
+        # Initialize diagonal
+        # dict(tuple : list); ex: (5,6):['NP', 'N']
+        print("Initializing diagonal:\n")
+        for i in range(0, len(tokens)):
+            terminal_tup = tuple(tokens[i].split())
+            nonterminal_ptr = {}
+            nonterminal_prob = {}
+            for lhs in self.grammar.rhs_to_rules[terminal_tup]:
+                nonterminal_ptr[lhs[0]] = (tokens[i], i, i+1)  # add to backptr table
+                nonterminal_prob[lhs[0]] = math.log10(lhs[2]) # add to probs table
+                print(lhs[0], ' -> ', terminal_tup)
+            table[(i, i+1)] = nonterminal_ptr
+            probs[(i, i+1)] = nonterminal_prob
+
+        # Main loop
+        print("\n")
+        n = len(tokens)
+        for length in range(2,n+1):
+            print('Level: ', length, '\n')
+            for i in range(0, (n-length)+1):
+                j = i + length
+                table[i,j] = {}
+                # probs[i,j] = {}
+                for k in range(i+1, j):
+                    B = table[(i,k)]
+                    C = table[(k,j)]
+                    # Each cell in B and C can have multiple non-terminals
+                    for nt_b in B.keys():
+                        for nt_c in C.keys():
+                            rhs = tuple([nt_b, nt_c])
+                            print(rhs)
+                            # Check if the rule is in the grammar
+                            if(self.grammar.rhs_to_rules[rhs]):
+                                for lhs in self.grammar.rhs_to_rules[rhs]:
+                                    print('grammar contains rule: ', lhs[0], ' -> ', rhs)
+                                    table[(i,j)][lhs[0]] = ((nt_b, i, k),(nt_c, k, j))
+                                    # Handle duplicates like (1,6):['VP','VP'];
+                                    # if(lhs[0] in table[(i,j)].keys()):
+                                        # table[(i,j)][lhs[0]] = max(append(lhs[0])
+            print("\n")
+
+        print("Table: ", dict(table), '\n')
+        print("Probs: ", dict(probs))
+
+        print(probs[(5,6)]['N'])
+
         return table, probs
 
 
@@ -172,7 +223,7 @@ def get_tree(chart, i,j,nt):
        
 if __name__ == "__main__":
     
-    with open('atis3.pcfg','r') as grammar_file: 
+    with open('sample.pcfg','r') as grammar_file: 
         grammar = Pcfg(grammar_file)
         parser = CkyParser(grammar)
 
@@ -181,18 +232,20 @@ if __name__ == "__main__":
         # parser.is_in_language(toks_valid)
         # print(parser.is_in_language(toks_valid))
 
-        toks_invalid = ['miami', 'flights','cleveland', 'from', 'to','.']
-        parser.is_in_language(toks_invalid)
-        print(parser.is_in_language(toks_invalid))
+        # toks_invalid = ['miami', 'flights','cleveland', 'from', 'to','.']
+        # parser.is_in_language(toks_invalid)
+        # print(parser.is_in_language(toks_invalid))
 
         # Test sample.pcfg
-        # toks_valid = ['she', 'saw', 'the', 'cat', 'with', 'glasses']
-        # parser.is_in_language(toks_valid)
-        # print(parser.is_in_language(toks_valid))
+        toks_valid = ['she', 'saw', 'the', 'cat', 'with', 'glasses']
+        parser.is_in_language(toks_valid)
+        print(parser.is_in_language(toks_valid))
 
         # toks_invalid = ['with', 'glasses', 'she', 'saw', 'the', 'cat']
         # parser.is_in_language(toks_invalid)
         # print(parser.is_in_language(toks_invalid))
+
+        parser.parse_with_backpointers(toks_valid)
 
         #table,probs = parser.parse_with_backpointers(toks)
         #assert check_table_format(chart)
