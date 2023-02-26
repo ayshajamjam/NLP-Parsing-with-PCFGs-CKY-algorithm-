@@ -160,9 +160,9 @@ class CkyParser(object):
         table = defaultdict(tuple)  #table containing backpointers
         probs = defaultdict(tuple)  #table containing probabilities
 
-        # check if the sentence is in the grammar
-        if (self.is_in_language(tokens) == False):
-            return
+        # # check if the sentence is in the grammar
+        # if (self.is_in_language(tokens) == False):
+        #     return
 
         # Initialize diagonal
         # dict(tuple : list); ex: (5,6):['NP', 'N']
@@ -217,7 +217,10 @@ class CkyParser(object):
                                     # Ex: (1,6): two VP options
                                     if(lhs[0] in table[(i,j)].keys()):
                                         # Check which log_prob is higher
-                                        if(abs(log_prob) > abs(probs[(i,j)][lhs[0]])):
+                                        print("LOOOOOOOOOK HERE")
+                                        print(log_prob)
+                                        print((probs[(i,j)][lhs[0]]))
+                                        if((log_prob) > (probs[(i,j)][lhs[0]])):
                                             table[(i,j)][lhs[0]] = ((nt_b, i, k),(nt_c, k, j))
                                             probs[(i,j)][lhs[0]] = log_prob
                                     else:
@@ -241,29 +244,50 @@ def get_tree(chart, i,j,nt):
     """
     Return the parse-tree rooted in non-terminal nt and covering span i,j.
     """
-    # TODO: Part 4
-    return None 
- 
+    sys.stdout.write('(' + "'" + nt + "'" + ', ')
+
+    if(type(chart[(i,j)][nt]) is str):
+        # print('Returning')
+        sys.stdout.write("'" + chart[(i,j)][nt] + "'" + ')')
+        return
+    
+    # Left subtree
+    left_i = chart[(i,j)][nt][0][1]
+    left_j = chart[(i,j)][nt][0][2]
+    left_nt = chart[(i,j)][nt][0][0]
+    # print(left_i, ' ', left_j, ' ', left_nt)
+    get_tree(chart, left_i, left_j, left_nt)
+
+    sys.stdout.write(', ')
+
+    # Right subtree
+    right_i = chart[(i,j)][nt][1][1]
+    right_j = chart[(i,j)][nt][1][2]
+    right_nt = chart[(i,j)][nt][1][0]
+    # print(right_i, ' ', right_j, ' ', right_nt)
+    get_tree(chart, right_i, right_j, right_nt)
+    sys.stdout.write(')')
+    
        
 if __name__ == "__main__":
     
-    with open('sample.pcfg','r') as grammar_file: 
+    with open('atis3.pcfg','r') as grammar_file: 
         grammar = Pcfg(grammar_file)
         parser = CkyParser(grammar)
 
         # Test atis3.pcfg
-        # toks_valid = ['flights', 'from','miami', 'to', 'cleveland','.']
-        # parser.is_in_language(toks_valid)
-        # print(parser.is_in_language(toks_valid))
+        toks_valid = ['flights', 'from','miami', 'to', 'cleveland','.']
+        parser.is_in_language(toks_valid)
+        print(parser.is_in_language(toks_valid))
 
         # toks_invalid = ['miami', 'flights','cleveland', 'from', 'to','.']
         # parser.is_in_language(toks_invalid)
         # print(parser.is_in_language(toks_invalid))
 
         # Test sample.pcfg
-        toks_valid = ['she', 'saw', 'the', 'cat', 'with', 'glasses']
-        parser.is_in_language(toks_valid)
-        print(parser.is_in_language(toks_valid))
+        # toks_valid = ['she', 'saw', 'the', 'cat', 'with', 'glasses']
+        # parser.is_in_language(toks_valid)
+        # print(parser.is_in_language(toks_valid))
 
         # toks_invalid = ['with', 'glasses', 'she', 'saw', 'the', 'cat']
         # parser.is_in_language(toks_invalid)
@@ -272,4 +296,7 @@ if __name__ == "__main__":
         table, probs = parser.parse_with_backpointers(toks_valid)
         assert check_table_format(table)
         assert check_probs_format(probs)
-        
+
+        print('\n')
+        get_tree(table, 0, len(toks_valid), grammar.startsymbol)
+        print('\n')
