@@ -56,21 +56,22 @@ class Pcfg(object):
 
         # Check if grammar is in CNF 
         for rhs in self.rhs_to_rules.keys():
-            # print(rhs, ' ---- ', len(rhs))
-
             # RHS with one element: one terminal
             if len(rhs) == 1:
                 if(rhs[0] in nonterminals):
                     print("NT --> NT not allowed. PCFG is not in CNF")
+                    print("Look at: ", rhs)
                     return False
             # RHS with two elements: both non-terminals
             elif len(rhs) == 2:
                 if(not(rhs[0] in nonterminals and rhs[1] in nonterminals)):
                     print("NT --> NT NT if two elements on RHS. PCFG is not in CNF")
+                    print("Look at: ", rhs)
                     return False
             # RHS with 2+ elements
             else:
                 print("Cannot have more than 2 nonterminals or terminals on RHS. PCFG is not in CNF")
+                print("Look at: ", rhs)
                 return False
 
         # Check if all probabilities for the same lhs (non-terminal) symbol approx sum to 1.0

@@ -101,28 +101,24 @@ class CkyParser(object):
         return False
         Use CYK algorithm
         """
-        # Check if grammar is in CNF
-        if(not self.grammar.verify_grammar()):
-            return False
 
         table = defaultdict(tuple)
         
         # Initialize diagonal
         # dict(tuple : list); ex: (5,6):['NP', 'N']
-        print("Initializing diagonal:\n")
         for i in range(0, len(tokens)):
             terminal_tup = tuple(tokens[i].split())
             nonterminal = []
+            # find all rules where lhs --> terminal
             for lhs in self.grammar.rhs_to_rules[terminal_tup]:
                 nonterminal.append(lhs[0])
-                print(lhs[0], ' -> ', terminal_tup)
+                # print(lhs[0], ' -> ', terminal_tup)
             table[(i, i+1)] = nonterminal
 
         # Main loop
-        print("\n")
         n = len(tokens)
         for length in range(2,n+1):
-            print('Level: ', length, '\n')
+            # print('Level: ', length, '\n')
             for i in range(0, (n-length)+1):
                 j = i + length
                 table[i,j] = []
@@ -136,21 +132,19 @@ class CkyParser(object):
                             # Check if the rule is in the grammar
                             if(self.grammar.rhs_to_rules[rhs]):
                                 for lhs in self.grammar.rhs_to_rules[rhs]:
-                                    print('grammar contains rule: ', lhs[0], ' -> ', rhs)
+                                    # print('grammar contains rule: ', lhs[0], ' -> ', rhs)
                                     # Handle duplicates like (1,6):['VP','VP'];
                                     if(lhs[0] not in table[(i,j)]):
                                         table[(i,j)].append(lhs[0])
-            print("\n")
+        # print("CYK Table:\n", dict(table), "\n")
 
-        print("CYK Table:\n", dict(table), "\n")
-
-        # Check if list in upper-right corner is nonempty so you can access first element in list
-        # Otherwise you will get an index error
+        # Check if list in upper-right corner is nonempty so you can access first element in list (prevents index error)
+        # Check if upper-right corner contains start symbol
         if(table[(0,n)] and self.grammar.startsymbol in table[(0,n)]):
-            print('The sentence is in the grammar')
+            # The sentence is in the grammar
             return True
 
-        print('The sentence is NOT in the grammar')
+        # The sentence is NOT in the grammar
         return False 
        
     def parse_with_backpointers(self, tokens):
@@ -160,13 +154,8 @@ class CkyParser(object):
         table = defaultdict(tuple)  #table containing backpointers
         probs = defaultdict(tuple)  #table containing probabilities
 
-        # # check if the sentence is in the grammar
-        # if (self.is_in_language(tokens) == False):
-        #     return
-
         # Initialize diagonal
         # dict(tuple : list); ex: (5,6):['NP', 'N']
-        print("Initializing diagonal:\n")
         for i in range(0, len(tokens)):
             terminal_tup = tuple(tokens[i].split())
             nonterminal_ptr = {}
@@ -174,15 +163,14 @@ class CkyParser(object):
             for lhs in self.grammar.rhs_to_rules[terminal_tup]:
                 nonterminal_ptr[lhs[0]] = tokens[i]  # terminals are just strings (no backpointers)
                 nonterminal_prob[lhs[0]] = math.log2(lhs[2]) # add to probs table
-                print(lhs[0], ' -> ', terminal_tup)
+                # print(lhs[0], ' -> ', terminal_tup)
             table[(i, i+1)] = nonterminal_ptr
             probs[(i, i+1)] = nonterminal_prob
 
         # Main loop
-        print("\n")
         n = len(tokens)
         for length in range(2,n+1):
-            print('Level: ', length, '\n')
+            # print('Level: ', length, '\n')
             for i in range(0, (n-length)+1):
                 j = i + length
                 table[i,j] = {}
@@ -194,11 +182,11 @@ class CkyParser(object):
                     for nt_b in B.keys():
                         for nt_c in C.keys():
                             rhs = tuple([nt_b, nt_c])
-                            print(rhs)
+                            # print(rhs)
                             # Check if the rule is in the grammar
                             if(self.grammar.rhs_to_rules[rhs]):
                                 for lhs in self.grammar.rhs_to_rules[rhs]:
-                                    print('grammar contains rule: ', lhs[0], ' -> ', rhs)
+                                    # print('grammar contains rule: ', lhs[0], ' -> ', rhs)
                                     
                                     # Rule probability
                                     prob_rule = lhs[2]  # Ex: NP -> D N
@@ -222,13 +210,12 @@ class CkyParser(object):
                                     else:
                                         table[(i,j)][lhs[0]] = ((nt_b, i, k),(nt_c, k, j))
                                         probs[(i,j)][lhs[0]] = log_prob
-            print("\n")
 
-        print("Table: ", dict(table), '\n')
-        print("Probs: ", dict(probs), '\n')
+        # Sentence not in grammar
+        if(not(table[(0,n)] and self.grammar.startsymbol in table[(0,n)])):
+            return {}, {}
 
         return table, probs
-
 
 def get_tree(chart, i,j,nt): 
     """
@@ -261,28 +248,35 @@ if __name__ == "__main__":
         grammar = Pcfg(grammar_file)
         parser = CkyParser(grammar)
 
-        # Test atis3.pcfg
-        toks_valid = ['flights', 'from','miami', 'to', 'cleveland','.']
-        parser.is_in_language(toks_valid)
-        print(parser.is_in_language(toks_valid))
+        # Test Part 1
+        # grammar.verify_grammar()
 
-        # toks_invalid = ['miami', 'flights','cleveland', 'from', 'to','.']
-        # parser.is_in_language(toks_invalid)
-        # print(parser.is_in_language(toks_invalid))
+        # Test Part 2, 3
 
-        # Test sample.pcfg
-        # toks_valid = ['she', 'saw', 'the', 'cat', 'with', 'glasses']
-        # parser.is_in_language(toks_valid)
-        # print(parser.is_in_language(toks_valid))
+        # Test atis3.pcfg: valid
+        toks = ['flights', 'from','miami', 'to', 'cleveland','.']
+        print("Sentence in grammar? ", parser.is_in_language(toks))
 
-        # toks_invalid = ['with', 'glasses', 'she', 'saw', 'the', 'cat']
-        # parser.is_in_language(toks_invalid)
-        # print(parser.is_in_language(toks_invalid))
+        # Test atis3.pcfg: invalid
+        # toks = ['miami', 'flights','cleveland', 'from', 'to','.']
+        # print("Sentence in grammar? ", parser.is_in_language(toks))
 
-        table, probs = parser.parse_with_backpointers(toks_valid)
+        # Test sample.pcfg: valid
+        # toks = ['she', 'saw', 'the', 'cat', 'with', 'glasses']
+        # print("Sentence in grammar? ", parser.is_in_language(toks))
+
+        # Test sample.pcfg: invalid
+        # toks = ['with', 'glasses', 'she', 'saw', 'the', 'cat']
+        # print("Sentence in grammar? ", parser.is_in_language(toks))
+
+        # Test Part 3
+        table, probs = parser.parse_with_backpointers(toks)
         assert check_table_format(table)
         assert check_probs_format(probs)
 
-        print('\n')
-        print(get_tree(table, 0, len(toks_valid), grammar.startsymbol),'\n')
+        print("Table: ", dict(table), '\n')
+        print("Probs: ", dict(probs), '\n')
+
+        # Test Part 4
+        print(get_tree(table, 0, len(toks), grammar.startsymbol),'\n')
 
