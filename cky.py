@@ -200,42 +200,32 @@ class CkyParser(object):
                                 for lhs in self.grammar.rhs_to_rules[rhs]:
                                     print('grammar contains rule: ', lhs[0], ' -> ', rhs)
                                     
-                                    print("RULE: ", lhs)
+                                    # Rule probability
                                     prob_rule = lhs[2]  # Ex: NP -> D N
 
-                                    print("Back Pointers for rule: ", ((nt_b, i, k),(nt_c, k, j)))
+                                    # Probability of left NT on RHS
                                     prob_left = probs[(i,k)][nt_b]  # Ex: Prob(D)
-                                    print("LEFT: ", (i,k), ' ', prob_left)
 
-                                    prob_right = probs[(k,j)][nt_c]
-                                    print("RIGHT: ", (k,j), ' ', prob_right) # Ex: Prob(N)
+                                    # Probability of right NT on RHS
+                                    prob_right = probs[(k,j)][nt_c] # Ex: Prob(N)
 
+                                    # Log probability: sum of 3 calculations (logs)
                                     log_prob = math.log2(prob_rule) + prob_left + prob_right
-                                    print("Overall probability of this rule: ", log_prob, '\n')
 
                                     # Deals with case where two of the same non-terminals appear in the same cell
                                     # Ex: (1,6): two VP options
                                     if(lhs[0] in table[(i,j)].keys()):
                                         # Check which log_prob is higher
-                                        print("LOOOOOOOOOK HERE")
-                                        print(log_prob)
-                                        print((probs[(i,j)][lhs[0]]))
                                         if((log_prob) > (probs[(i,j)][lhs[0]])):
                                             table[(i,j)][lhs[0]] = ((nt_b, i, k),(nt_c, k, j))
                                             probs[(i,j)][lhs[0]] = log_prob
                                     else:
                                         table[(i,j)][lhs[0]] = ((nt_b, i, k),(nt_c, k, j))
                                         probs[(i,j)][lhs[0]] = log_prob
-
-
             print("\n")
 
         print("Table: ", dict(table), '\n')
-        print("Probs: ", dict(probs))
-
-        # print(probs[(5,6)]['N'])
-        # print(table[2,4]['NP'][0][0])
-        # print(table[2,4]['NP'][1][0])
+        print("Probs: ", dict(probs), '\n')
 
         return table, probs
 
@@ -244,31 +234,27 @@ def get_tree(chart, i,j,nt):
     """
     Return the parse-tree rooted in non-terminal nt and covering span i,j.
     """
-    sys.stdout.write('(' + "'" + nt + "'" + ', ')
+    tree = tuple([nt])
 
+    # Terminal reached then return (NT, string)
     if(type(chart[(i,j)][nt]) is str):
-        # print('Returning')
-        sys.stdout.write("'" + chart[(i,j)][nt] + "'" + ')')
-        return None
+        tree = tuple((nt, chart[(i,j)][nt]))
+        return tree
     
     # Left subtree
     left_i = chart[(i,j)][nt][0][1]
     left_j = chart[(i,j)][nt][0][2]
     left_nt = chart[(i,j)][nt][0][0]
-    # print(left_i, ' ', left_j, ' ', left_nt)
-    get_tree(chart, left_i, left_j, left_nt)
-
-    sys.stdout.write(', ')
+    tree = (*tree, get_tree(chart, left_i, left_j, left_nt))
 
     # Right subtree
     right_i = chart[(i,j)][nt][1][1]
     right_j = chart[(i,j)][nt][1][2]
     right_nt = chart[(i,j)][nt][1][0]
-    # print(right_i, ' ', right_j, ' ', right_nt)
-    get_tree(chart, right_i, right_j, right_nt)
-    sys.stdout.write(')')
+    tree = (*tree, get_tree(chart, right_i, right_j, right_nt))
     
-       
+    return tree
+    
 if __name__ == "__main__":
     
     with open('atis3.pcfg','r') as grammar_file: 
@@ -298,5 +284,5 @@ if __name__ == "__main__":
         assert check_probs_format(probs)
 
         print('\n')
-        get_tree(table, 0, len(toks_valid), grammar.startsymbol)
-        print('\n')
+        print(get_tree(table, 0, len(toks_valid), grammar.startsymbol),'\n')
+
