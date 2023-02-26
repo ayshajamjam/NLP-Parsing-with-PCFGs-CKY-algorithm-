@@ -173,7 +173,7 @@ class CkyParser(object):
             nonterminal_prob = {}
             for lhs in self.grammar.rhs_to_rules[terminal_tup]:
                 nonterminal_ptr[lhs[0]] = tokens[i]  # terminals are just strings (no backpointers)
-                nonterminal_prob[lhs[0]] = math.log10(lhs[2]) # add to probs table
+                nonterminal_prob[lhs[0]] = math.log2(lhs[2]) # add to probs table
                 print(lhs[0], ' -> ', terminal_tup)
             table[(i, i+1)] = nonterminal_ptr
             probs[(i, i+1)] = nonterminal_prob
@@ -210,7 +210,7 @@ class CkyParser(object):
                                     prob_right = probs[(k,j)][nt_c]
                                     print("RIGHT: ", (k,j), ' ', prob_right) # Ex: Prob(N)
 
-                                    log_prob = math.log10(prob_rule) + prob_left + prob_right
+                                    log_prob = math.log2(prob_rule) + prob_left + prob_right
                                     print("Overall probability of this rule: ", log_prob, '\n')
 
                                     # Deals with case where two of the same non-terminals appear in the same cell
@@ -249,7 +249,7 @@ def get_tree(chart, i,j,nt):
     if(type(chart[(i,j)][nt]) is str):
         # print('Returning')
         sys.stdout.write("'" + chart[(i,j)][nt] + "'" + ')')
-        return
+        return None
     
     # Left subtree
     left_i = chart[(i,j)][nt][0][1]
